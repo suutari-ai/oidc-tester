@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>OIDC RP</title>
+</head>
+<body>
+  <center>
+    <h1>OpenID Connect RP Example</h1>
+    <label for="scope-input">Scope:</label>
+    <input
+        id="scope-input" type="text" name="scope" size="100"
+        value="openid profile https://api.hel.fi/auth/kerrokantasi https://api.hel.fi/auth/respa.readonly"
+    ></input><br>
+    <button id="login-button">Login</button>
+  </center>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
+  <script src="openidconnect.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    var clientInfo = {
+      client_id : '332114',
+      redirect_uri : window.location.href.split('#')[0]
+    };
+
+    OIDC.setClientInfo(clientInfo);
+
+    var providerInfo = OIDC.discover('http://localhost:8000/openid');
+
+    OIDC.setProviderInfo(providerInfo);
+    OIDC.storeInfo(providerInfo, clientInfo);
+
+    // Restore configuration information.
+    OIDC.restoreInfo();
+
+    // Dump the ID Token from URL, if present
+    var idToken = null;
+    if (window.location.href.match('id_token=')) {
+      try {
+        var idToken = OIDC.getValidIdToken();
+      }
+      catch(e) {
+        console.log(e);
+        alert('ID Token error: ' + e);
+      }
+    }
+    if (idToken) {
+      var idTokenData = OIDC.getIdTokenPayload(idToken);
+      if (idTokenData !== null) {
+        alert('ID Token data: ' + JSON.stringify(idTokenData, null, 2));
+      }
+    }
+
+    // Get Access Token
+    var token = OIDC.getAccessToken();
+    if (token) {
+      // Make userinfo request using Access Token.
+      $.get(OIDC['userinfo_endpoint'] + '?access_token=' + token)
+       .done(function(data) {
+         alert('User Info: '+ JSON.stringify(data));
+         if (confirm('Redirect to the API tokens?')) {
+           window.location.href = 'http://localhost:8000/api-tokens/?access_token=' + token;
+         }
+       })
+       .fail(function(jqxhr, textStatus) {
+         alert('Error getting User Info: ' +
+               jqxhr.status + ' ' + jqxhr.statusText);
+       });
+    }
+
+    // Make an authorization request if the user click the login button.
+    $('#login-button').click(function (event) {
+      var scope = $('#scope-input').val();
+      OIDC.login({
+        scope: scope,
+        response_type: 'id_token token'
+        /* , claims: {
+         *   id_token: ['email'],
+         *   userinfo: ['given_name', 'family_name'],
+        }*/
+      });
+    });
+  });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "oidc-tester",
+  "version": "1.0.0",
+  "description": "Simple static HTML + JS for testing OIDC implicit flow",
+  "scripts": {
+    "serve": "http-server -p 3000 client/"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "http-server": "^0.10.0"
+  }
+}
